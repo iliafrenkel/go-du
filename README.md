@@ -8,4 +8,4 @@ The purpose of this implementation is not to build a better `du`. It is to learn
  - concurrency
  - error handling
 
-If you want to learn together, ask a question, offer help or get in touch for any other reason please don't hesitate to contact me [frenkel.ilia@gmail.com](frenkel.ilia@gmail.com).
+If you want to learn together, ask a question, offer help or get in touch for any other reason please don't hesitate to contact me [frenkel.ilia@gmail.com](mailto:frenkel.ilia@gmail.com).
