@@ -48,7 +48,7 @@ var opts struct {
 }
 
 // Holds the file/directory names from the command line arguments
-var files []string
+var argFiles []string
 
 // Unit size
 var unitSize int64 = 512
@@ -78,27 +78,46 @@ func main() {
 	flag.Parse()
 
 	// If there are no arguments provided, default to the current directory
-	files = flag.Args()
-	if len(files) == 0 {
-		files = append(files, ".")
+	argFiles = flag.Args()
+	if len(argFiles) == 0 {
+		argFiles = append(argFiles, ".")
 	}
 
-	fmt.Printf("%+v\n%v\n\n", opts, files)
+	fmt.Printf("%+v\n%v\n\n", opts, argFiles)
 
 	// Set the unit size to 1024 if "-k" is specified
 	if opts.BlockSize {
 		unitSize = 1024
 	}
 
-	for _, file := range files {
+	for _, file := range argFiles {
 		f, err := os.Stat(file)
 		if err != nil {
 			errLog.Println(err)
 			continue
 		}
 
-		if f.Mode().IsRegular() {
-			fmt.Printf("%v %s\n", f.Size()/unitSize, f.Name())
+		if f.Mode().IsRegular() { // it's a file, print out its size
+			fmt.Printf("%v\t%s\n", (f.Size()+unitSize-1)/unitSize, f.Name())
+		} else { // it's a dir, count all the file sizes
+			files, err := os.ReadDir(file)
+			var size int64
+			if err != nil {
+				errLog.Println(err)
+				continue
+			}
+			for _, f := range files {
+				info, err := f.Info()
+				if err != nil {
+					errLog.Println(err)
+					continue
+				}
+				size = size + info.Size()
+				if opts.CountFiles {
+					fmt.Printf("%v\t%s\n", info.Size(), f.Name())
+				}
+			}
+			fmt.Printf("%v\t%s\n", size/unitSize, file)
 		}
 	}
 }
