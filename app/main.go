@@ -1,11 +1,43 @@
+// Copyright 2021 Ilia Frenkel. All rights reserved.
+// Use of this source code is governed by the MIT license
+// that can be found in the LICENSE file.
+
+// By default, the du utility shall write to standard output the
+// size of the file space allocated to, and the size of the file
+// space allocated to each subdirectory of, the file hierarchy
+// rooted in each of the specified files. By default, when a
+// symbolic link is encountered on the command line or in the file
+// hierarchy, du shall count the size of the symbolic link (rather
+// than the file referenced by the link), and shall not follow the
+// link to another portion of the file hierarchy. The size of the
+// file space allocated to a file of type directory shall be defined
+// as the sum total of space allocated to all files in the file
+// hierarchy rooted in the directory plus the space allocated to the
+// directory itself.
+
+// When du cannot stat() files or stat() or read directories, it
+// shall report an error condition and the final exit status is
+// affected. A file that occurs multiple times under one file
+// operand and that has a link count greater than 1 shall be counted
+// and written for only one entry. It is implementation-defined
+// whether a file that has a link count no greater than 1 is counted
+// and written just once, or is counted and written for each
+// occurrence. It is implementation-defined whether a file that
+// occurs under one file operand is counted for other file operands.
+// The directory entry that is selected in the report is
+// unspecified. By default, file sizes shall be written in 512-byte
+// units, rounded up to the next 512-byte unit.
+
 package main
 
 import (
 	"flag"
 	"fmt"
+	"log"
 	"os"
 )
 
+// Command-line flags
 var opts struct {
 	BlockSize       bool `short:"k" default:"false" description:"Write the files sizes in units of 1024 bytes, rather than the default 512-byte units"`
 	CountFiles      bool `short:"a" long:"all" default:"false" description:"write counts for all files, not just directories"`
@@ -15,7 +47,14 @@ var opts struct {
 	Summarise       bool `short:"s" long:"summarise" default:"false" description:"display only a total for each argument"`
 }
 
+// Holds the file/directory names from the command line arguments
 var files []string
+
+// Unit size
+var unitSize int64 = 512
+
+// A logger that outputs to stderr without the timestamp
+var errLog = log.New(os.Stderr, "", 0)
 
 func main() {
 	// Define command-line flags
@@ -44,6 +83,22 @@ func main() {
 		files = append(files, ".")
 	}
 
-	fmt.Println(opts)
-	fmt.Println(files)
+	fmt.Printf("%+v\n%v\n\n", opts, files)
+
+	// Set the unit size to 1024 if "-k" is specified
+	if opts.BlockSize {
+		unitSize = 1024
+	}
+
+	for _, file := range files {
+		f, err := os.Stat(file)
+		if err != nil {
+			errLog.Println(err)
+			continue
+		}
+
+		if f.Mode().IsRegular() {
+			fmt.Printf("%v %s\n", f.Size()/unitSize, f.Name())
+		}
+	}
 }
