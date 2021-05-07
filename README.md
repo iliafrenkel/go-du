@@ -1,4 +1,4 @@
-# Go du - estimate file space usage
+# GO du - estimate file space usage
 
 _An implementation of [du(1)](https://man7.org/linux/man-pages/man1/du.1p.html)
 in Golang._
