@@ -35,6 +35,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 )
 
 // Command-line flags
@@ -55,6 +56,39 @@ var unitSize int64 = 512
 
 // A logger that outputs to stderr without the timestamp
 var errLog = log.New(os.Stderr, "", 0)
+
+func calcSize(size int64) int64 {
+	return 1 + (size-1)/unitSize
+}
+
+// Prints out total size of all files in a directory recursively.
+// Any errors encountered during traversal will be printed to stderr and will
+// not cause the function to fail.
+func dirSize(path string) int64 {
+	files, err := os.ReadDir(path)
+	if err != nil {
+		errLog.Println(err)
+	}
+	var size int64
+	for _, f := range files {
+		info, err := f.Info()
+		if err != nil {
+			errLog.Println(err)
+			continue
+		}
+		if f.IsDir() {
+			size = size + dirSize(filepath.Join(path, f.Name()))
+		} else {
+			size = size + info.Size()
+			if opts.CountFiles {
+				fmt.Printf("%v\t%s\n", calcSize(info.Size()), f.Name())
+			}
+		}
+	}
+
+	fmt.Printf("%v\t%s\n", calcSize(size), path)
+	return size
+}
 
 func main() {
 	// Define command-line flags
@@ -83,7 +117,7 @@ func main() {
 		argFiles = append(argFiles, ".")
 	}
 
-	fmt.Printf("%+v\n%v\n\n", opts, argFiles)
+	// fmt.Printf("%+v\n%v\n\n", opts, argFiles)
 
 	// Set the unit size to 1024 if "-k" is specified
 	if opts.BlockSize {
@@ -98,26 +132,9 @@ func main() {
 		}
 
 		if f.Mode().IsRegular() { // it's a file, print out its size
-			fmt.Printf("%v\t%s\n", (f.Size()+unitSize-1)/unitSize, f.Name())
+			fmt.Printf("%v\t%s\n", calcSize(f.Size()), f.Name())
 		} else { // it's a dir, count all the file sizes
-			files, err := os.ReadDir(file)
-			var size int64
-			if err != nil {
-				errLog.Println(err)
-				continue
-			}
-			for _, f := range files {
-				info, err := f.Info()
-				if err != nil {
-					errLog.Println(err)
-					continue
-				}
-				size = size + info.Size()
-				if opts.CountFiles {
-					fmt.Printf("%v\t%s\n", info.Size(), f.Name())
-				}
-			}
-			fmt.Printf("%v\t%s\n", size/unitSize, file)
+			dirSize(file)
 		}
 	}
 }
