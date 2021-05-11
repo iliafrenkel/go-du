@@ -36,6 +36,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"syscall"
 )
 
 // Command-line flags
@@ -51,14 +52,25 @@ var opts struct {
 // Holds the file/directory names from the command line arguments
 var argFiles []string
 
+// Filesystem block size
+var fsBlockSize int64 = 4096
+
 // Unit size
 var unitSize int64 = 512
 
 // A logger that outputs to stderr without the timestamp
 var errLog = log.New(os.Stderr, "", 0)
 
+// Recieves size in bytes and returns size in units.
+//
+// Filesystem allocates space in blocks and not in bytes. That is why the
+// actual size of the file is usually smaller than the space allocated for
+// it by the system. Since we want to report the acual space in use and
+// not the file size we need calculate the number of filesystem blocks
+// allocated to the file.
 func calcSize(size int64) int64 {
-	return 1 + (size-1)/unitSize
+	allocSize := (1 + (size-1)/fsBlockSize) * fsBlockSize
+	return 1 + (allocSize-1)/unitSize
 }
 
 // Prints out total size of all files in a directory recursively.
@@ -81,7 +93,7 @@ func dirSize(path string) int64 {
 		} else {
 			size = size + info.Size()
 			if opts.CountFiles {
-				fmt.Printf("%v\t%s\n", calcSize(info.Size()), f.Name())
+				fmt.Printf("%v\t%s\n", calcSize(info.Size()), path+string(filepath.Separator)+f.Name())
 			}
 		}
 	}
@@ -117,7 +129,17 @@ func main() {
 		argFiles = append(argFiles, ".")
 	}
 
-	// fmt.Printf("%+v\n%v\n\n", opts, argFiles)
+	// https://man7.org/linux/man-pages/man2/statfs.2.html
+	// We will need the following to identify which filesystem
+	// the file is on and what is the block size. For now we
+	// assume "/" is the only one.
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs("/", &stat); err != nil {
+		errLog.Println(err)
+	} else {
+		fsBlockSize = stat.Bsize
+	}
+	// fmt.Printf("Fs type [FS ID]: 0x%xd[%v]\n", stat.Type, stat.Fsid)
 
 	// Set the unit size to 1024 if "-k" is specified
 	if opts.BlockSize {
@@ -130,7 +152,6 @@ func main() {
 			errLog.Println(err)
 			continue
 		}
-
 		if f.Mode().IsRegular() { // it's a file, print out its size
 			fmt.Printf("%v\t%s\n", calcSize(f.Size()), f.Name())
 		} else { // it's a dir, count all the file sizes
