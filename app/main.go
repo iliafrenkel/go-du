@@ -61,7 +61,7 @@ var unitSize int64 = 512
 // A logger that outputs to stderr without the timestamp
 var errLog = log.New(os.Stderr, "", 0)
 
-// Recieves size in bytes and returns size in units.
+// Receives size in bytes and returns size in units.
 //
 // Filesystem allocates space in blocks and not in bytes. That is why the
 // actual size of the file is usually smaller than the space allocated for

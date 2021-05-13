@@ -36,4 +36,9 @@ func Test_Main(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create test data: %v", err)
 	}
+
+	got := dirSize("./testdata")
+	if got != 4096 {
+		t.Errorf("Expecting ./testdata size to be 4096 and not %v", got)
+	}
 }
