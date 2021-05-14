@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/fs"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -31,14 +32,32 @@ func createTestData() error {
 	return nil
 }
 
-func Test_Main(t *testing.T) {
+func Test_BuildTree(t *testing.T) {
 	err := createTestData()
 	if err != nil {
 		t.Fatalf("Failed to create test data: %v", err)
 	}
 
-	got := dirSize("./testdata")
-	if got != 4096 {
-		t.Errorf("Expecting ./testdata size to be 4096 and not %v", got)
+	dt := dirTree{
+		path:    "./testdata",
+		size:    calcSize(fsBlockSize),
+		files:   []fs.FileInfo{},
+		subdirs: []dirTree{},
+	}
+	buildDirTree(&dt)
+
+	got := dt.size
+	if got != 16448 {
+		t.Errorf("Expecting ./testdata size to be 16448 and not %v", got)
+	}
+
+	got = dt.subdirs[0].size
+	if got != 16408 {
+		t.Errorf("Expecting %s size to be 16408 and not %v", dt.subdirs[0].path, got)
+	}
+
+	got = dt.subdirs[0].subdirs[0].size
+	if got != 8208 {
+		t.Errorf("Expecting %s size to be 8208 and not %v", dt.subdirs[0].subdirs[0].path, got)
 	}
 }
