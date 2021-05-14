@@ -33,11 +33,15 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
 	"syscall"
 )
+
+// Format for printing out dir/file entry
+const outFormat = "%d\t%s\n"
 
 // Command-line flags
 var opts struct {
@@ -61,6 +65,28 @@ var unitSize int64 = 512
 // A logger that outputs to stderr without the timestamp
 var errLog = log.New(os.Stderr, "", 0)
 
+// A directory tree with accumulated sizes for each directory
+type dirTree struct {
+	path    string
+	size    int64
+	files   []os.FileInfo
+	subdirs []dirTree
+}
+
+// Get filesystem block size.
+//
+// Returns block size in bytes or -1 in case of an error.
+// https://man7.org/linux/man-pages/man2/statfs.2.html
+func getFSBlockSize(path string) int64 {
+	var stat syscall.Statfs_t
+	if err := syscall.Statfs(path, &stat); err != nil {
+		return -1
+	} else {
+		return stat.Bsize
+	}
+	// fmt.Printf("Fs type [FS ID]: 0x%xd[%v]\n", stat.Type, stat.Fsid)
+}
+
 // Receives size in bytes and returns size in units.
 //
 // Filesystem allocates space in blocks and not in bytes. That is why the
@@ -73,15 +99,12 @@ func calcSize(size int64) int64 {
 	return 1 + (allocSize-1)/unitSize
 }
 
-// Prints out total size of all files in a directory recursively.
-// Any errors encountered during traversal will be printed to stderr and will
-// not cause the function to fail.
-func dirSize(path string) int64 {
-	files, err := os.ReadDir(path)
+// Fill the dirTree struct starting from the root
+func buildDirTree(dt *dirTree) {
+	files, err := os.ReadDir(dt.path)
 	if err != nil {
 		errLog.Println(err)
 	}
-	var size int64
 	for _, f := range files {
 		info, err := f.Info()
 		if err != nil {
@@ -89,17 +112,36 @@ func dirSize(path string) int64 {
 			continue
 		}
 		if f.IsDir() {
-			size = size + dirSize(filepath.Join(path, f.Name()))
-		} else {
-			size = size + info.Size()
-			if opts.CountFiles {
-				fmt.Printf("%v\t%s\n", calcSize(info.Size()), path+string(filepath.Separator)+f.Name())
+			sdt := dirTree{
+				path:    filepath.Join(dt.path, f.Name()),
+				size:    calcSize(fsBlockSize),
+				files:   []fs.FileInfo{},
+				subdirs: []dirTree{},
 			}
+			buildDirTree(&sdt)
+			dt.size = dt.size + sdt.size
+			dt.subdirs = append(dt.subdirs, sdt)
+		} else {
+			dt.size = dt.size + calcSize(info.Size())
+			dt.files = append(dt.files, info)
 		}
 	}
+}
 
-	fmt.Printf("%v\t%s\n", calcSize(size), path)
-	return size
+// Prints out the direcories tree represented by dirTree structure.
+//
+// Files are printed first but only if `-a` flag was specified.
+// Format is defined by the `outFormat` constant.
+func printDirTree(dt dirTree) {
+	if opts.CountFiles {
+		for _, f := range dt.files {
+			fmt.Printf(outFormat, calcSize(f.Size()), filepath.Join(dt.path, f.Name()))
+		}
+	}
+	for _, d := range dt.subdirs {
+		printDirTree(d)
+	}
+	fmt.Printf(outFormat, dt.size, filepath.Clean(dt.path))
 }
 
 func main() {
@@ -123,23 +165,14 @@ func main() {
 	flag.BoolVar(&opts.Summarise, "s", false, "\tdisplay only a total for each argument")
 	flag.Parse()
 
+	// Get filesystem block size
+	fsBlockSize = getFSBlockSize("/")
+
 	// If there are no arguments provided, default to the current directory
 	argFiles = flag.Args()
 	if len(argFiles) == 0 {
 		argFiles = append(argFiles, ".")
 	}
-
-	// https://man7.org/linux/man-pages/man2/statfs.2.html
-	// We will need the following to identify which filesystem
-	// the file is on and what is the block size. For now we
-	// assume "/" is the only one.
-	var stat syscall.Statfs_t
-	if err := syscall.Statfs("/", &stat); err != nil {
-		errLog.Println(err)
-	} else {
-		fsBlockSize = stat.Bsize
-	}
-	// fmt.Printf("Fs type [FS ID]: 0x%xd[%v]\n", stat.Type, stat.Fsid)
 
 	// Set the unit size to 1024 if "-k" is specified
 	if opts.BlockSize {
@@ -155,7 +188,14 @@ func main() {
 		if f.Mode().IsRegular() { // it's a file, print out its size
 			fmt.Printf("%v\t%s\n", calcSize(f.Size()), f.Name())
 		} else { // it's a dir, count all the file sizes
-			dirSize(file)
+			dt := dirTree{
+				path:    file,
+				size:    calcSize(fsBlockSize),
+				files:   []fs.FileInfo{},
+				subdirs: []dirTree{},
+			}
+			buildDirTree(&dt)
+			printDirTree(dt)
 		}
 	}
 }
