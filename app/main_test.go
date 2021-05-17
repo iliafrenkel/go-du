@@ -46,17 +46,17 @@ func Test_BuildTree(t *testing.T) {
 	buildDirTree(&dt)
 
 	got := dt.size
-	if got != 16448 {
-		t.Errorf("Expecting ./testdata size to be 16448 and not %v", got)
+	if got != 16432 {
+		t.Errorf("Expecting ./testdata size to be 16432 and not %v", got)
 	}
 
 	got = dt.subdirs[0].size
-	if got != 16408 {
-		t.Errorf("Expecting %s size to be 16408 and not %v", dt.subdirs[0].path, got)
+	if got != 16392 {
+		t.Errorf("Expecting %s size to be 16392 and not %v", dt.subdirs[0].path, got)
 	}
 
 	got = dt.subdirs[0].subdirs[0].size
-	if got != 8208 {
-		t.Errorf("Expecting %s size to be 8208 and not %v", dt.subdirs[0].subdirs[0].path, got)
+	if got != 8200 {
+		t.Errorf("Expecting %s size to be 8200 and not %v", dt.subdirs[0].subdirs[0].path, got)
 	}
 }
