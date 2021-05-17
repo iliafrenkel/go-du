@@ -33,7 +33,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/fs"
 	"log"
 	"os"
 	"path/filepath"
@@ -53,24 +52,33 @@ var opts struct {
 	Summarise       bool `short:"s" long:"summarise" default:"false" description:"display only a total for each argument"`
 }
 
-// Holds the file/directory names from the command line arguments
+// Holds the file/directory names from the command line arguments.
 var argFiles []string
 
-// Filesystem block size
+// Filesystem block size. The default is 4k but we will try to get the real
+// size for each filesystem later.
 var fsBlockSize int64 = 4096
 
-// Unit size
+// Unit size used for displaying. Posix standard says it should be 512 bytes
+// but most modern implementations (such as GNU coreutils) use 1024. We will
+// stick with Posix. The `-k` flag allows to switch to 1024 instead.
 var unitSize int64 = 512
 
-// A logger that outputs to stderr without the timestamp
+// A logger that outputs to stderr without the timestamp.
 var errLog = log.New(os.Stderr, "", 0)
 
 // A directory tree with accumulated sizes for each directory
 type dirTree struct {
 	path    string
 	size    int64
-	files   []os.FileInfo
+	files   []fileInfo
 	subdirs []dirTree
+}
+
+// A simple structs that represents a file in a directory
+type fileInfo struct {
+	path string
+	size int64
 }
 
 // Get filesystem block size.
@@ -114,8 +122,8 @@ func buildDirTree(dt *dirTree) {
 		if f.IsDir() {
 			sdt := dirTree{
 				path:    filepath.Join(dt.path, f.Name()),
-				size:    calcSize(fsBlockSize),
-				files:   []fs.FileInfo{},
+				size:    0,
+				files:   []fileInfo{},
 				subdirs: []dirTree{},
 			}
 			buildDirTree(&sdt)
@@ -123,7 +131,11 @@ func buildDirTree(dt *dirTree) {
 			dt.subdirs = append(dt.subdirs, sdt)
 		} else {
 			dt.size = dt.size + calcSize(info.Size())
-			dt.files = append(dt.files, info)
+			fi := fileInfo{
+				path: filepath.Join(dt.path, info.Name()),
+				size: calcSize(info.Size()),
+			}
+			dt.files = append(dt.files, fi)
 		}
 	}
 }
@@ -135,7 +147,7 @@ func buildDirTree(dt *dirTree) {
 func printDirTree(dt dirTree) {
 	if opts.CountFiles {
 		for _, f := range dt.files {
-			fmt.Printf(outFormat, calcSize(f.Size()), filepath.Join(dt.path, f.Name()))
+			fmt.Printf(outFormat, f.size, f.path)
 		}
 	}
 	for _, d := range dt.subdirs {
@@ -190,8 +202,8 @@ func main() {
 		} else { // it's a dir, count all the file sizes
 			dt := dirTree{
 				path:    file,
-				size:    calcSize(fsBlockSize),
-				files:   []fs.FileInfo{},
+				size:    0,
+				files:   []fileInfo{},
 				subdirs: []dirTree{},
 			}
 			buildDirTree(&dt)

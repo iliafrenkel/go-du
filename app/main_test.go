@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/fs"
 	"io/ioutil"
 	"os"
 	"testing"
@@ -41,7 +40,7 @@ func Test_BuildTree(t *testing.T) {
 	dt := dirTree{
 		path:    "./testdata",
 		size:    calcSize(fsBlockSize),
-		files:   []fs.FileInfo{},
+		files:   []fileInfo{},
 		subdirs: []dirTree{},
 	}
 	buildDirTree(&dt)
