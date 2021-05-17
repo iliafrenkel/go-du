@@ -150,8 +150,10 @@ func printDirTree(dt dirTree) {
 			fmt.Printf(outFormat, f.size, f.path)
 		}
 	}
-	for _, d := range dt.subdirs {
-		printDirTree(d)
+	if !opts.Summarise {
+		for _, d := range dt.subdirs {
+			printDirTree(d)
+		}
 	}
 	fmt.Printf(outFormat, dt.size, filepath.Clean(dt.path))
 }
@@ -176,6 +178,10 @@ func main() {
 	flag.BoolVar(&opts.OneFileSystem, "x", false, "\tskip directories on different file systems")
 	flag.BoolVar(&opts.Summarise, "s", false, "\tdisplay only a total for each argument")
 	flag.Parse()
+	// Check that there are no conflicts between flags
+	if opts.CountFiles && opts.Summarise {
+		errLog.Fatal("Cannot both summarise and show all entries.")
+	}
 
 	// Get filesystem block size
 	fsBlockSize = getFSBlockSize("/")
