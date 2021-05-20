@@ -36,7 +36,6 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"syscall"
 )
 
 // Format for printing out dir/file entry
@@ -79,20 +78,6 @@ type dirTree struct {
 type fileInfo struct {
 	path string
 	size int64
-}
-
-// Get filesystem block size.
-//
-// Returns block size in bytes or -1 in case of an error.
-// https://man7.org/linux/man-pages/man2/statfs.2.html
-func getFSBlockSize(path string) int64 {
-	var stat syscall.Statfs_t
-	if err := syscall.Statfs(path, &stat); err != nil {
-		return -1
-	} else {
-		return stat.Bsize
-	}
-	// fmt.Printf("Fs type [FS ID]: 0x%xd[%v]\n", stat.Type, stat.Fsid)
 }
 
 // Receives size in bytes and returns size in units.
@@ -158,7 +143,8 @@ func printDirTree(dt dirTree) {
 	fmt.Printf(outFormat, dt.size, filepath.Clean(dt.path))
 }
 
-func main() {
+// Declare and parse command line flags.
+func init() {
 	// Define command-line flags
 	flag.Usage = func() {
 		fmt.Printf("Usage: %s [-a|-s] [-kx] [-H|-L] [FILE...]\n", os.Args[0])
@@ -182,10 +168,10 @@ func main() {
 	if opts.CountFiles && opts.Summarise {
 		errLog.Fatal("Cannot both summarise and show all entries.")
 	}
+	fmt.Printf("os.Args: %v\n", os.Args)
+}
 
-	// Get filesystem block size
-	fsBlockSize = getFSBlockSize("/")
-
+func main() {
 	// If there are no arguments provided, default to the current directory
 	argFiles = flag.Args()
 	if len(argFiles) == 0 {
