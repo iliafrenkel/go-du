@@ -42,7 +42,7 @@ import (
 const outFormat = "%d\t%s\n"
 
 // Command-line flags
-var opts struct {
+type options struct {
 	BlockSize       bool `short:"k" default:"false" description:"Write the files sizes in units of 1024 bytes, rather than the default 512-byte units"`
 	CountFiles      bool `short:"a" long:"all" default:"false" description:"write counts for all files, not just directories"`
 	DereferenceAll  bool `short:"L" long:"dereference" default:"false" description:"dereference all symbolic links"`
@@ -50,6 +50,8 @@ var opts struct {
 	OneFileSystem   bool `short:"x" long:"one-files-system" default:"false" description:"skip directories on different file systems"`
 	Summarise       bool `short:"s" long:"summarise" default:"false" description:"display only a total for each argument"`
 }
+
+var opts options
 
 // Holds the file/directory names from the command line arguments.
 var argFiles []string
