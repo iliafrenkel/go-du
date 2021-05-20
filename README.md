@@ -9,8 +9,12 @@ files take up on disk. But from an educational perspective it provides several
 good learning opportunities:
  - how to work with command-line options and switches
  - how to work with the file system
- - concurrency
+ - concurrency, maybe?
  - error handling
+ - unit testing
+
+There are a lot of comments in the code, this is on purpose. Don't forget - 
+this is a learning exercise.
 
 The implementation is POSIX _compatible_. Other implementations exist, such as
 the one from GNU coreutils: https://www.gnu.org/software/coreutils/du.
