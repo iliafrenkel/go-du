@@ -17,7 +17,7 @@ var _ = func() bool {
 	return true
 }()
 
-const testFilesRoot = "./testdata"
+const testFilesRoot = "testdata"
 
 // Represents a single file of a given size
 type testFile struct {
@@ -33,6 +33,7 @@ type testCase struct {
 	path     string     // path for the test
 	opts     options    // simulated command line options
 	expected int64      // expected size in bytes
+	output   []string   // expected output
 }
 
 var testCases = []testCase{
@@ -51,6 +52,24 @@ var testCases = []testCase{
 			Summarise:       false,
 		},
 		expected: 3456,
+		output:   []string{"8\t" + testFilesRoot},
+	},
+	{
+		name: "Single file and -k",
+		files: []testFile{
+			{filepath.Join(testFilesRoot, "under_4k.txt"), 3456},
+		},
+		path: testFilesRoot,
+		opts: options{
+			BlockSize:       true, // <--
+			CountFiles:      false,
+			DereferenceAll:  false,
+			DereferenceArgs: false,
+			OneFileSystem:   false,
+			Summarise:       false,
+		},
+		expected: 3456,
+		output:   []string{"4\t" + testFilesRoot},
 	},
 	{
 		name: "Single directory",
@@ -69,6 +88,7 @@ var testCases = []testCase{
 			Summarise:       false,
 		},
 		expected: 4096 + 4096 + 8192,
+		output:   []string{"32\t" + testFilesRoot},
 	},
 }
 
@@ -158,6 +178,12 @@ func Test_BuildTree(t *testing.T) {
 			want := calcSize(tc.expected)
 			if got != want {
 				t.Errorf("Expecting size to be %v and not %v", want, got)
+			}
+			out := printDirTree(dt)
+			for i, v := range out {
+				if v != tc.output[i] {
+					t.Errorf("Output string #%v '%s' is not equal to the expected one '%s'", i, v, tc.output[i])
+				}
 			}
 		})
 		err = deleteTestData(tc.files)
