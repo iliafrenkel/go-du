@@ -93,6 +93,8 @@ func calcSize(size int64) int64 {
 	// Set the unit size to 1024 if "-k" is specified
 	if opts.BlockSize {
 		unitSize = 1024
+	} else {
+		unitSize = 512
 	}
 	allocSize := (1 + (size-1)/fsBlockSize) * fsBlockSize
 	return 1 + (allocSize-1)/unitSize
