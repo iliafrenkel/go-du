@@ -90,6 +90,29 @@ var testCases = []testCase{
 		expected: 4096 + 4096 + 8192,
 		output:   []string{"32\t" + testFilesRoot},
 	},
+	{
+		name: "Miltiple directories",
+		files: []testFile{
+			{filepath.Join(testFilesRoot, "under_4k.txt"), 3456},
+			{filepath.Join(testFilesRoot, "exactly_4k.txt"), 4096},
+			{filepath.Join(testFilesRoot, "over_4k.txt"), 5678},
+			{filepath.Join(testFilesRoot, "subdir", "over_4m.txt"), 5678 * 1024},
+		},
+		path: testFilesRoot,
+		opts: options{
+			BlockSize:       false,
+			CountFiles:      false,
+			DereferenceAll:  false,
+			DereferenceArgs: false,
+			OneFileSystem:   false,
+			Summarise:       false,
+		},
+		expected: 4096 + 4096 + 8192 + 8192*1024,
+		output: []string{
+			"11368\t" + fixPath(filepath.Join(testFilesRoot, "subdir")),
+			"11370\t" + testFilesRoot,
+		},
+	},
 }
 
 // Creates and empty file of a given size with a given name.
@@ -166,6 +189,7 @@ func Test_BuildTree(t *testing.T) {
 			t.Fatalf("Failed to create test data: %v", err)
 		}
 		t.Run(tc.name, func(t *testing.T) {
+			defer deleteTestData(tc.files)
 			dt := dirTree{
 				path:    tc.path,
 				size:    0,
@@ -186,9 +210,5 @@ func Test_BuildTree(t *testing.T) {
 				}
 			}
 		})
-		err = deleteTestData(tc.files)
-		if err != nil {
-			t.Fatalf("Failed to delete test data: %v", err)
-		}
 	}
 }
