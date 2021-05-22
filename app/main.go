@@ -137,6 +137,16 @@ func buildDirTree(dt *dirTree) {
 	}
 }
 
+func fixPath(path string) string {
+	if filepath.IsAbs(path) {
+		return path
+	}
+	if path[0] == '.' {
+		return path
+	}
+	return "./" + path
+}
+
 // printDirTree walks over `dt` recursively and returns a slice of strings that
 // represents the output of the `go-du` command taking into account various
 // command line flags.
@@ -151,7 +161,7 @@ func printDirTree(dt dirTree) []string {
 	// If "-a" is provided output files first
 	if opts.CountFiles {
 		for _, f := range dt.files {
-			out = append(out, fmt.Sprintf(outFormat, f.size, f.path))
+			out = append(out, fmt.Sprintf(outFormat, f.size, fixPath(f.path)))
 		}
 	}
 	if !opts.Summarise {
@@ -159,7 +169,7 @@ func printDirTree(dt dirTree) []string {
 			out = append(out, printDirTree(d)...)
 		}
 	}
-	out = append(out, fmt.Sprintf(outFormat, dt.size, filepath.Clean(dt.path)))
+	out = append(out, fmt.Sprintf(outFormat, dt.size, fixPath(filepath.Clean(dt.path))))
 
 	return out
 }

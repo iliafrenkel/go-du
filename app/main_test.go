@@ -17,7 +17,7 @@ var _ = func() bool {
 	return true
 }()
 
-const testFilesRoot = "testdata"
+const testFilesRoot = "./testdata"
 
 // Represents a single file of a given size
 type testFile struct {
