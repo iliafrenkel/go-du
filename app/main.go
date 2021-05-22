@@ -90,6 +90,10 @@ type fileInfo struct {
 // not the file size we need calculate the number of filesystem blocks
 // allocated to the file.
 func calcSize(size int64) int64 {
+	// Set the unit size to 1024 if "-k" is specified
+	if opts.BlockSize {
+		unitSize = 1024
+	}
 	allocSize := (1 + (size-1)/fsBlockSize) * fsBlockSize
 	return 1 + (allocSize-1)/unitSize
 }
@@ -142,6 +146,7 @@ func buildDirTree(dt *dirTree) {
 // testing of the output.
 func printDirTree(dt dirTree) []string {
 	var out []string
+	// If "-a" is provided output files first
 	if opts.CountFiles {
 		for _, f := range dt.files {
 			out = append(out, fmt.Sprintf(outFormat, f.size, f.path))
@@ -190,11 +195,6 @@ func main() {
 	argFiles = flag.Args()
 	if len(argFiles) == 0 {
 		argFiles = append(argFiles, ".")
-	}
-
-	// Set the unit size to 1024 if "-k" is specified
-	if opts.BlockSize {
-		unitSize = 1024
 	}
 
 	for _, file := range argFiles {
