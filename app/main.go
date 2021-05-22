@@ -39,7 +39,7 @@ import (
 )
 
 // Format for printing out dir/file entry
-const outFormat = "%d\t%s\n"
+const outFormat = "%d\t%s"
 
 // Command-line flags
 type options struct {
@@ -82,7 +82,7 @@ type fileInfo struct {
 	size int64
 }
 
-// Receives size in bytes and returns size in units.
+// calcSize receives size in bytes and returns size in units.
 //
 // Filesystem allocates space in blocks and not in bytes. That is why the
 // actual size of the file is usually smaller than the space allocated for
@@ -94,7 +94,11 @@ func calcSize(size int64) int64 {
 	return 1 + (allocSize-1)/unitSize
 }
 
-// Fill the dirTree struct starting from the root
+// buildDirTree builds a hierarchy of directories represented by a dirTree
+// structure starting from the directory given by `dt`.
+//
+// Any errors encountered during the traversal will be printed to stderr and
+// will not cause the function to fail.
 func buildDirTree(dt *dirTree) {
 	files, err := os.ReadDir(dt.path)
 	if err != nil {
@@ -109,7 +113,7 @@ func buildDirTree(dt *dirTree) {
 		if f.IsDir() {
 			sdt := dirTree{
 				path:    filepath.Join(dt.path, f.Name()),
-				size:    0,
+				size:    calcSize(fsBlockSize),
 				files:   []fileInfo{},
 				subdirs: []dirTree{},
 			}
@@ -127,22 +131,30 @@ func buildDirTree(dt *dirTree) {
 	}
 }
 
-// Prints out the direcories tree represented by dirTree structure.
+// printDirTree walks over `dt` recursively and returns a slice of strings that
+// represents the output of the `go-du` command taking into account various
+// command line flags.
 //
 // Files are printed first but only if `-a` flag was specified.
 // Format is defined by the `outFormat` constant.
-func printDirTree(dt dirTree) {
+//
+// We return a slice of strings instead of printing it out directly to allow
+// testing of the output.
+func printDirTree(dt dirTree) []string {
+	var out []string
 	if opts.CountFiles {
 		for _, f := range dt.files {
-			fmt.Printf(outFormat, f.size, f.path)
+			out = append(out, fmt.Sprintf(outFormat, f.size, f.path))
 		}
 	}
 	if !opts.Summarise {
 		for _, d := range dt.subdirs {
-			printDirTree(d)
+			out = append(out, printDirTree(d)...)
 		}
 	}
-	fmt.Printf(outFormat, dt.size, filepath.Clean(dt.path))
+	out = append(out, fmt.Sprintf(outFormat, dt.size, filepath.Clean(dt.path)))
+
+	return out
 }
 
 // Declare and parse command line flags.
@@ -201,7 +213,9 @@ func main() {
 				subdirs: []dirTree{},
 			}
 			buildDirTree(&dt)
-			printDirTree(dt)
+			for _, s := range printDirTree(dt) {
+				fmt.Println(s)
+			}
 		}
 	}
 }
