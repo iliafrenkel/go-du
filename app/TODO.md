@@ -2,13 +2,13 @@
 
  - [ ] More robust unit tests with higher coverage
     * Test with -a flag
-    * Test with -k flag
+    * ~Test with -k flag~
     * Test with -s flag
     * Test flag conflicts
-    * Test single file
-    * Test single directory
+    * ~Test single file~
+    * ~Test single directory~
     * Test multiple files
-    * Test multiple directories
+    * ~Test multiple directories~
     * Test multiple files and directories
     * Test different sizes
         - empty directory
