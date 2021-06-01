@@ -106,6 +106,15 @@ func calcSize(size int64) int64 {
 // Any errors encountered during the traversal will be printed to stderr and
 // will not cause the function to fail.
 func buildDirTree(dt *dirTree) {
+	dtInfo, err := os.Stat(dt.path)
+	if err != nil {
+		errLog.Println(err)
+	}
+	dt.size = calcSize(dtInfo.Size())
+	if !dtInfo.IsDir() {
+		return
+	}
+
 	files, err := os.ReadDir(dt.path)
 	if err != nil {
 		errLog.Println(err)
@@ -210,24 +219,15 @@ func main() {
 	}
 
 	for _, file := range argFiles {
-		f, err := os.Stat(file)
-		if err != nil {
-			errLog.Println(err)
-			continue
+		dt := dirTree{
+			path:    file,
+			size:    0,
+			files:   []fileInfo{},
+			subdirs: []dirTree{},
 		}
-		if f.Mode().IsRegular() { // it's a file, print out its size
-			fmt.Printf("%v\t%s\n", calcSize(f.Size()), f.Name())
-		} else { // it's a dir, count all the file sizes
-			dt := dirTree{
-				path:    file,
-				size:    0,
-				files:   []fileInfo{},
-				subdirs: []dirTree{},
-			}
-			buildDirTree(&dt)
-			for _, s := range printDirTree(dt) {
-				fmt.Println(s)
-			}
+		buildDirTree(&dt)
+		for _, s := range printDirTree(dt) {
+			fmt.Println(s)
 		}
 	}
 }
