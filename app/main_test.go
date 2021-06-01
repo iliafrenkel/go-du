@@ -148,11 +148,9 @@ func createTestData(testFiles []testFile) error {
 }
 
 // Delete test directories and files.
-func deleteTestData(testFiles []testFile) error {
-	for _, f := range testFiles {
-		if err := os.RemoveAll(f.path); err != nil {
-			return err
-		}
+func resetTestData() error {
+	if err := os.RemoveAll(testFilesRoot); err != nil {
+		return err
 	}
 
 	return nil
@@ -189,7 +187,7 @@ func Test_BuildTree(t *testing.T) {
 			t.Fatalf("Failed to create test data: %v", err)
 		}
 		t.Run(tc.name, func(t *testing.T) {
-			defer deleteTestData(tc.files)
+			defer resetTestData()
 			dt := dirTree{
 				path:    tc.path,
 				size:    0,
