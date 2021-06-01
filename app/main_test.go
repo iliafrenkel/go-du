@@ -51,8 +51,8 @@ var testCases = []testCase{
 			OneFileSystem:   false,
 			Summarise:       false,
 		},
-		expected: 3456,
-		output:   []string{"8\t" + testFilesRoot},
+		expected: 3456 + 4096,
+		output:   []string{"16\t" + testFilesRoot},
 	},
 	{
 		name: "Single file and -k",
@@ -68,8 +68,8 @@ var testCases = []testCase{
 			OneFileSystem:   false,
 			Summarise:       false,
 		},
-		expected: 3456,
-		output:   []string{"4\t" + testFilesRoot},
+		expected: 3456 + 4096,
+		output:   []string{"8\t" + testFilesRoot},
 	},
 	{
 		name: "Single directory",
@@ -87,8 +87,8 @@ var testCases = []testCase{
 			OneFileSystem:   false,
 			Summarise:       false,
 		},
-		expected: 4096 + 4096 + 8192,
-		output:   []string{"32\t" + testFilesRoot},
+		expected: 4096 + 4096 + 8192 + 4096,
+		output:   []string{"40\t" + testFilesRoot},
 	},
 	{
 		name: "Miltiple directories",
@@ -107,10 +107,10 @@ var testCases = []testCase{
 			OneFileSystem:   false,
 			Summarise:       false,
 		},
-		expected: 4096 + 4096 + 8192 + 8192*1024,
+		expected: 4096 + 4096 + 8192 + 5818367 + 4096,
 		output: []string{
 			"11368\t" + fixPath(filepath.Join(testFilesRoot, "subdir")),
-			"11370\t" + testFilesRoot,
+			"11408\t" + testFilesRoot,
 		},
 	},
 }
