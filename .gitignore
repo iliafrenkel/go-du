@@ -20,3 +20,6 @@ testdata
 # VSCode folders
 .vscode
 .devcontainer
+
+# Build folder
+build
