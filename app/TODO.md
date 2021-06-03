@@ -1,7 +1,7 @@
 # TODO
 
- - [ ] More robust unit tests with higher coverage
-    * ~Test with -a flag~j
+ - [x] More robust unit tests with higher coverage
+    * ~Test with -a flag~
     * ~Test with -k flag~
     * ~Test with -s flag~
     * Test flag conflicts
@@ -20,13 +20,3 @@
 
  - [ ] CI/CD pipeline that automatically tests, builds and creates releases for
        multiple architectures
-
- - [ ] Cross platform detection of the silesystem block size. At the moment it
-       is hardcoded to be 4096 bytes.
-
- - [x] Generate coverage report:
-       ```
-       go test --cover -coverprofile=coverage.out ./...
-       go tool cover -html=coverage.out -o covearge.html
-       ```
- - [ ] Add `--version` flag to show license, contact and version info.

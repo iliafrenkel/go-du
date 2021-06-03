@@ -47,7 +47,7 @@ type options struct {
 	CountFiles      bool `short:"a" long:"all" default:"false" description:"write counts for all files, not just directories"`
 	DereferenceAll  bool `short:"L" long:"dereference" default:"false" description:"dereference all symbolic links"`
 	DereferenceArgs bool `short:"H" long:"dereference-args" default:"false" description:"dereference only symlinks that are listed on the command line"`
-	OneFileSystem   bool `short:"x" long:"one-files-system" default:"false" description:"skip directories on different file systems"`
+	OneFileSystem   bool `short:"x" long:"one-file-system" default:"false" description:"skip directories on different file systems"`
 	Summarise       bool `short:"s" long:"summarise" default:"false" description:"display only a total for each argument"`
 }
 
