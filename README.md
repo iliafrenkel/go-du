@@ -3,6 +3,8 @@
 _An implementation of [du(1)](https://man7.org/linux/man-pages/man1/du.1p.html)
 in Golang._
 
+[![codecov](https://codecov.io/gh/iliafrenkel/go-du/branch/main/graph/badge.svg?token=TAW8VOW39N)](https://codecov.io/gh/iliafrenkel/go-du)
+
 The purpose of this implementation is not to build a better `du`. It is to learn
 Golang. I chose `du` because it serves a simple purpose - show how much space
 files take up on disk. But from an educational perspective it provides several
