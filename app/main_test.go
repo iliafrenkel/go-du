@@ -38,6 +38,23 @@ type testCase struct {
 
 var testCases = []testCase{
 	{
+		name:  "Access denied",
+		files: []testFile{},
+		path:  "/root",
+		opts: options{
+			BlockSize:       false,
+			CountFiles:      false,
+			DereferenceAll:  false,
+			DereferenceArgs: false,
+			OneFileSystem:   false,
+			Summarise:       false,
+		},
+		expected: 0,
+		output: []string{
+			"8\t/root",
+		},
+	},
+	{
 		name: "Single file",
 		files: []testFile{
 			{filepath.Join(testFilesRoot, "under_4k.txt"), 3456},
@@ -53,6 +70,23 @@ var testCases = []testCase{
 		},
 		expected: 3456 + 4096,
 		output:   []string{"16\t" + testFilesRoot},
+	},
+	{
+		name: "Single file argument",
+		files: []testFile{
+			{filepath.Join(testFilesRoot, "under_4k.txt"), 3456},
+		},
+		path: testFilesRoot + "/under_4k.txt",
+		opts: options{
+			BlockSize:       false,
+			CountFiles:      false,
+			DereferenceAll:  false,
+			DereferenceArgs: false,
+			OneFileSystem:   false,
+			Summarise:       false,
+		},
+		expected: 4096,
+		output:   []string{"8\t" + testFilesRoot + "/under_4k.txt"},
 	},
 	{
 		name: "Single file and -k",
@@ -110,6 +144,55 @@ var testCases = []testCase{
 		expected: 4096 + 4096 + 8192 + 5818367 + 4096,
 		output: []string{
 			"11368\t" + fixPath(filepath.Join(testFilesRoot, "subdir")),
+			"11408\t" + testFilesRoot,
+		},
+	},
+	{
+		name: "Summarise",
+		files: []testFile{
+			{filepath.Join(testFilesRoot, "under_4k.txt"), 3456},
+			{filepath.Join(testFilesRoot, "exactly_4k.txt"), 4096},
+			{filepath.Join(testFilesRoot, "over_4k.txt"), 5678},
+			{filepath.Join(testFilesRoot, "subdir", "over_4m.txt"), 5678 * 1024},
+		},
+		path: testFilesRoot,
+		opts: options{
+			BlockSize:       false,
+			CountFiles:      false,
+			DereferenceAll:  false,
+			DereferenceArgs: false,
+			OneFileSystem:   false,
+			Summarise:       true,
+		},
+		expected: 4096 + 4096 + 8192 + 5818367 + 4096,
+		output: []string{
+			"11408\t" + testFilesRoot,
+		},
+	},
+	{
+		name: "All files",
+		files: []testFile{
+			{filepath.Join(testFilesRoot, "under_4k.txt"), 3456},
+			{filepath.Join(testFilesRoot, "exactly_4k.txt"), 4096},
+			{filepath.Join(testFilesRoot, "over_4k.txt"), 5678},
+			{filepath.Join(testFilesRoot, "subdir", "over_4m.txt"), 5678 * 1024},
+		},
+		path: testFilesRoot,
+		opts: options{
+			BlockSize:       false,
+			CountFiles:      true,
+			DereferenceAll:  false,
+			DereferenceArgs: false,
+			OneFileSystem:   false,
+			Summarise:       false,
+		},
+		expected: 4096 + 4096 + 8192 + 5818367 + 4096,
+		output: []string{
+			"8\t" + testFilesRoot + "/exactly_4k.txt",
+			"16\t" + testFilesRoot + "/over_4k.txt",
+			"8\t" + testFilesRoot + "/under_4k.txt",
+			"11360\t" + testFilesRoot + "/subdir/over_4m.txt",
+			"11368\t" + testFilesRoot + "/subdir",
 			"11408\t" + testFilesRoot,
 		},
 	},
