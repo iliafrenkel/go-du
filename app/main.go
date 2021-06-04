@@ -55,9 +55,11 @@ type options struct {
 var opts options
 
 // Version information, comes from the build flags (see Makefile)
-var revision = "unknown"
-var version = "unknown"
-var branch = "unknown"
+var (
+	revision = "unknown"
+	version  = "unknown"
+	branch   = "unknown"
+)
 
 // Holds the file/directory names from the command line arguments.
 var argFiles []string

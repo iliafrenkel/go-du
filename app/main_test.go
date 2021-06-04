@@ -252,6 +252,7 @@ func Test_Flags(t *testing.T) {
 		{"-H", opts.DereferenceArgs, false},
 		{"-x", opts.OneFileSystem, false},
 		{"-s", opts.Summarise, false},
+		{"-v", opts.Version, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
