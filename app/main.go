@@ -194,7 +194,8 @@ func init() {
 	// Define command-line flags
 	flag.Usage = func() {
 		fmt.Println("Usage: go-du [-a|-s] [-kx] [-H|-L] [FILE...]")
-		fmt.Println("Summarise disk usage of the set of FILEs, recursively for directories.\n")
+		fmt.Println("Summarise disk usage of the set of FILEs, recursively for directories.")
+		fmt.Println()
 		flag.PrintDefaults()
 		fmt.Println("\nThis is POSIX compatible implementation of the du utility. For exended")
 		fmt.Println("documentation see https://man7.org/linux/man-pages/man1/du.1p.html")
@@ -220,7 +221,8 @@ func init() {
 		fmt.Println("Copyright (c) 2021 Ilia Frenkel")
 		fmt.Println("MIT License <https://opensource.org/licenses/MIT>")
 		fmt.Println("Source code <https://github.com/iliafrenkel/go-du/>")
-		fmt.Println("\nWritten by Ilia Frenkel<frenkel.ilia@gmail.com>\n")
+		fmt.Println("\nWritten by Ilia Frenkel<frenkel.ilia@gmail.com>")
+		fmt.Println()
 		os.Exit(0)
 	}
 
