@@ -6,13 +6,15 @@ GO_FILES := $(shell find . -name '*.go' | grep -v /vendor/ | grep -v _test.go)
 
 B=$(shell git rev-parse --abbrev-ref HEAD)
 BRANCH=$(subst /,-,$(B))
-GITREV=$(shell git describe --abbrev=7 --always --tags)
+GITREV=$(shell git describe --abbrev=7 --always --tags | cut -d- -f1-2)
 REV=$(GITREV)-$(BRANCH)-$(shell date +%Y%m%d-%H:%M:%S)
 
 all: build
 
 info: ## Show the revision
-	- @echo "revision $(REV)"
+	@echo "branch: $(BRANCH)"
+	@echo "version: $(GITREV)"
+	@echo "revision: $(REV)"
 
 dep: ## Get the dependencies
 	@go mod download
@@ -28,7 +30,7 @@ test-coverage: ## Run all the unit tests with coverage report
 	@cat cover.out >> coverage.txt
 
 build: info dep ## Build the binary
-	- cd app && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X main.revision=$(REV) -s -w" -o ../build/$(PROJECT_NAME)
+	- cd app && GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags "-X 'main.revision=$(REV)' -X 'main.version=$(GITREV)' -X 'main.branch=$(BRANCH)' -s -w" -o ../build/$(PROJECT_NAME)
 
 clean: ## Remove previous build
 	@rm -f build/$(PROJECT_NAME)

@@ -49,9 +49,15 @@ type options struct {
 	DereferenceArgs bool `short:"H" long:"dereference-args" default:"false" description:"dereference only symlinks that are listed on the command line"`
 	OneFileSystem   bool `short:"x" long:"one-file-system" default:"false" description:"skip directories on different file systems"`
 	Summarise       bool `short:"s" long:"summarise" default:"false" description:"display only a total for each argument"`
+	Version         bool `short:"v" long:"version" default:"false" description:"show version info and exit"`
 }
 
 var opts options
+
+// Version information, comes from the build flags (see Makefile)
+var revision = "unknown"
+var version = "unknown"
+var branch = "unknown"
 
 // Holds the file/directory names from the command line arguments.
 var argFiles []string
@@ -187,8 +193,8 @@ func printDirTree(dt dirTree) []string {
 func init() {
 	// Define command-line flags
 	flag.Usage = func() {
-		fmt.Printf("Usage: %s [-a|-s] [-kx] [-H|-L] [FILE...]\n", os.Args[0])
-		fmt.Printf("Summarise disk usage of the set of FILEs, recursively for directories.\n\n")
+		fmt.Println("Usage: go-du [-a|-s] [-kx] [-H|-L] [FILE...]")
+		fmt.Println("Summarise disk usage of the set of FILEs, recursively for directories.\n")
 		flag.PrintDefaults()
 		fmt.Println("\nThis is POSIX compatible implementation of the du utility. For exended")
 		fmt.Println("documentation see https://man7.org/linux/man-pages/man1/du.1p.html")
@@ -196,6 +202,7 @@ func init() {
 		fmt.Println("unless -k flag is specified.")
 		fmt.Println("\nCreated by Ilia Frenkel<frenkel.ilia@gmail.com>")
 		fmt.Println("Report bugs at https://github.com/iliafrenkel/go-du")
+		fmt.Printf("Revision: %s\n", revision)
 	}
 	flag.BoolVar(&opts.BlockSize, "k", false, "\tWrite the files sizes in units of 1024 bytes, rather than the\n\tdefault 512-byte units")
 	flag.BoolVar(&opts.CountFiles, "a", false, "\twrite counts for all files, not just directories")
@@ -203,7 +210,20 @@ func init() {
 	flag.BoolVar(&opts.DereferenceArgs, "H", false, "\tdereference only symlinks that are listed on the command line")
 	flag.BoolVar(&opts.OneFileSystem, "x", false, "\tskip directories on different file systems")
 	flag.BoolVar(&opts.Summarise, "s", false, "\tdisplay only a total for each argument")
+	flag.BoolVar(&opts.Version, "version", false, "\t")
+	flag.BoolVar(&opts.Version, "v", false, "\tshow version info and exit")
 	flag.Parse()
+
+	// If version is requested print out the info and ignore all other flags
+	if opts.Version {
+		fmt.Println("go-du", version)
+		fmt.Println("Copyright (c) 2021 Ilia Frenkel")
+		fmt.Println("MIT License <https://opensource.org/licenses/MIT>")
+		fmt.Println("Source code <https://github.com/iliafrenkel/go-du/>")
+		fmt.Println("\nWritten by Ilia Frenkel<frenkel.ilia@gmail.com>\n")
+		os.Exit(0)
+	}
+
 	// Check that there are no conflicts between flags
 	if opts.CountFiles && opts.Summarise {
 		errLog.Fatal("Cannot both summarise and show all entries.")
