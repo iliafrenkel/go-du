@@ -191,6 +191,28 @@ func printDirTree(dt dirTree) []string {
 	return out
 }
 
+// conflictingFlags checks that there are no conflicts between various command line
+// flags. Prints out an error message and returns true if there are some
+// conflicting flags, returns false otherwise.
+func conflictingFlags() bool {
+	if opts.CountFiles && opts.Summarise {
+		errLog.Println("Cannot both summarise and show all entries.")
+		return true
+	}
+
+	return false
+}
+
+// printVersion prints out version, license and contact information.
+func printVersion() {
+	fmt.Println("go-du", version)
+	fmt.Println("Copyright (c) 2021 Ilia Frenkel")
+	fmt.Println("MIT License <https://opensource.org/licenses/MIT>")
+	fmt.Println("Source code <https://github.com/iliafrenkel/go-du/>")
+	fmt.Println("\nWritten by Ilia Frenkel<frenkel.ilia@gmail.com>")
+	fmt.Println()
+}
+
 // Declare and parse command line flags.
 func init() {
 	// Define command-line flags
@@ -217,22 +239,15 @@ func init() {
 	flag.BoolVar(&opts.Version, "v", false, "\tshow version info and exit")
 	flag.Parse()
 
-	// If version is requested print out the info and ignore all other flags
-	if opts.Version {
-		fmt.Println("go-du", version)
-		fmt.Println("Copyright (c) 2021 Ilia Frenkel")
-		fmt.Println("MIT License <https://opensource.org/licenses/MIT>")
-		fmt.Println("Source code <https://github.com/iliafrenkel/go-du/>")
-		fmt.Println("\nWritten by Ilia Frenkel<frenkel.ilia@gmail.com>")
-		fmt.Println()
-		os.Exit(0)
+	if conflictingFlags() {
+		os.Exit(1)
 	}
 
-	// Check that there are no conflicts between flags
-	if opts.CountFiles && opts.Summarise {
-		errLog.Fatal("Cannot both summarise and show all entries.")
+	// If version is requested print out the info and ignore all other flags
+	if opts.Version {
+		printVersion()
+		os.Exit(0)
 	}
-	fmt.Printf("os.Args: %v\n", os.Args)
 }
 
 func main() {

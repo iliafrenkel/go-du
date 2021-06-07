@@ -264,6 +264,20 @@ func Test_Flags(t *testing.T) {
 	}
 }
 
+func Test_FlagConflicts(t *testing.T) {
+	opts = options{
+		BlockSize:       false,
+		CountFiles:      true,
+		DereferenceAll:  false,
+		DereferenceArgs: false,
+		OneFileSystem:   false,
+		Summarise:       true,
+	}
+	if !conflictingFlags() {
+		t.Errorf("Expecting conflict between -a and -s flags.")
+	}
+}
+
 func Test_BuildTree(t *testing.T) {
 	for _, tc := range testCases {
 		err := createTestData(tc.files)
