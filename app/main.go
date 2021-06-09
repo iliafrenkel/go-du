@@ -35,7 +35,8 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"path/filepath"
+
+	"github.com/iliafrenkel/go-du/app/dirtree"
 )
 
 // Format for printing out dir/file entry
@@ -64,132 +65,8 @@ var (
 // Holds the file/directory names from the command line arguments.
 var argFiles []string
 
-// Filesystem block size. The default is 4k but we will try to get the real
-// size for each filesystem later.
-var fsBlockSize int64 = 4096
-
-// Unit size used for displaying. Posix standard says it should be 512 bytes
-// but most modern implementations (such as GNU coreutils) use 1024. We will
-// stick with Posix. The `-k` flag allows to switch to 1024 instead.
-var unitSize int64 = 512
-
 // A logger that outputs to stderr without the timestamp.
 var errLog = log.New(os.Stderr, "", 0)
-
-// A directory tree with accumulated sizes for each directory
-type dirTree struct {
-	path    string
-	size    int64
-	files   []fileInfo
-	subdirs []dirTree
-}
-
-// A simple structs that represents a file in a directory
-type fileInfo struct {
-	path string
-	size int64
-}
-
-// calcSize receives size in bytes and returns size in units.
-//
-// Filesystem allocates space in blocks and not in bytes. That is why the
-// actual size of the file is usually smaller than the space allocated for
-// it by the system. Since we want to report the acual space in use and
-// not the file size we need calculate the number of filesystem blocks
-// allocated to the file.
-func calcSize(size int64) int64 {
-	// Set the unit size to 1024 if "-k" is specified
-	if opts.BlockSize {
-		unitSize = 1024
-	} else {
-		unitSize = 512
-	}
-	allocSize := (1 + (size-1)/fsBlockSize) * fsBlockSize
-	return 1 + (allocSize-1)/unitSize
-}
-
-// buildDirTree builds a hierarchy of directories represented by a dirTree
-// structure starting from the directory given by `dt`.
-//
-// Any errors encountered during the traversal will be printed to stderr and
-// will not cause the function to fail.
-func buildDirTree(dt *dirTree) {
-	dtInfo, err := os.Stat(dt.path)
-	if err != nil {
-		errLog.Println(err)
-	}
-	dt.size = calcSize(dtInfo.Size())
-	if !dtInfo.IsDir() {
-		return
-	}
-
-	files, err := os.ReadDir(dt.path)
-	if err != nil {
-		errLog.Println(err)
-	}
-	for _, f := range files {
-		info, err := f.Info()
-		if err != nil {
-			errLog.Println(err)
-			continue
-		}
-		if f.IsDir() {
-			sdt := dirTree{
-				path:    filepath.Join(dt.path, f.Name()),
-				size:    calcSize(fsBlockSize),
-				files:   []fileInfo{},
-				subdirs: []dirTree{},
-			}
-			buildDirTree(&sdt)
-			dt.size = dt.size + sdt.size
-			dt.subdirs = append(dt.subdirs, sdt)
-		} else {
-			dt.size = dt.size + calcSize(info.Size())
-			fi := fileInfo{
-				path: filepath.Join(dt.path, info.Name()),
-				size: calcSize(info.Size()),
-			}
-			dt.files = append(dt.files, fi)
-		}
-	}
-}
-
-func fixPath(path string) string {
-	if filepath.IsAbs(path) {
-		return path
-	}
-	if path[0] == '.' {
-		return path
-	}
-	return "./" + path
-}
-
-// printDirTree walks over `dt` recursively and returns a slice of strings that
-// represents the output of the `go-du` command taking into account various
-// command line flags.
-//
-// Files are printed first but only if `-a` flag was specified.
-// Format is defined by the `outFormat` constant.
-//
-// We return a slice of strings instead of printing it out directly to allow
-// testing of the output.
-func printDirTree(dt dirTree) []string {
-	var out []string
-	// If "-a" is provided output files first
-	if opts.CountFiles {
-		for _, f := range dt.files {
-			out = append(out, fmt.Sprintf(outFormat, f.size, fixPath(f.path)))
-		}
-	}
-	if !opts.Summarise {
-		for _, d := range dt.subdirs {
-			out = append(out, printDirTree(d)...)
-		}
-	}
-	out = append(out, fmt.Sprintf(outFormat, dt.size, fixPath(filepath.Clean(dt.path))))
-
-	return out
-}
 
 // conflictingFlags checks that there are no conflicts between various command line
 // flags. Prints out an error message and returns true if there are some
@@ -257,15 +134,15 @@ func main() {
 		argFiles = append(argFiles, ".")
 	}
 
+	// If -k is provided set block size to 1024
+	var bs int64 = 512
+	if opts.BlockSize {
+		bs = 1024
+	}
+
 	for _, file := range argFiles {
-		dt := dirTree{
-			path:    file,
-			size:    0,
-			files:   []fileInfo{},
-			subdirs: []dirTree{},
-		}
-		buildDirTree(&dt)
-		for _, s := range printDirTree(dt) {
+		dt := dirtree.New(file, bs)
+		for _, s := range dt.PrintDirTree(outFormat, opts.CountFiles, opts.Summarise) {
 			fmt.Println(s)
 		}
 	}
