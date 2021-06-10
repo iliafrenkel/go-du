@@ -48,6 +48,23 @@ type testCase struct {
 
 var testCases = []testCase{
 	{
+		name:  "File does not exist",
+		files: []testFile{},
+		path:  "./ak5i8fg74",
+		opts: options{
+			BlockSize:       false,
+			CountFiles:      false,
+			DereferenceAll:  false,
+			DereferenceArgs: false,
+			OneFileSystem:   false,
+			Summarise:       false,
+		},
+		expected: 0,
+		output: []string{
+			"0\t./ak5i8fg74",
+		},
+	},
+	{
 		name:  "Access denied",
 		files: []testFile{},
 		path:  "/root",
@@ -59,7 +76,7 @@ var testCases = []testCase{
 			OneFileSystem:   false,
 			Summarise:       false,
 		},
-		expected: 0,
+		expected: 8,
 		output: []string{
 			"8\t/root",
 		},
