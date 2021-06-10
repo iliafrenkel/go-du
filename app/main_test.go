@@ -52,3 +52,8 @@ func Test_FlagConflicts(t *testing.T) {
 		t.Errorf("Expecting conflict between -a and -s flags.")
 	}
 }
+
+func Test_PrintVersion(t *testing.T) {
+	// I don't know what to test here yet.
+	printVersion()
+}

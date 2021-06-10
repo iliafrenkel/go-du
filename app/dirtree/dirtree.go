@@ -63,6 +63,7 @@ func (dt *DirTree) buildDirTree() {
 	dtInfo, err := os.Stat(dt.path)
 	if err != nil {
 		errLog.Println(err)
+		return
 	}
 	dt.size = dt.calcSize(dtInfo.Size())
 	if !dtInfo.IsDir() {
@@ -126,6 +127,9 @@ func (dt *DirTree) PrintDirTree(outFormat string, countFiles bool, summarise boo
 // not the file size we need calculate the number of filesystem blocks
 // allocated to the file.
 func (dt *DirTree) calcSize(size int64) int64 {
+	if size == 0 {
+		return 0
+	}
 	allocSize := (1 + (size-1)/dt.blockSize) * dt.blockSize
 	return 1 + (allocSize-1)/dt.unitSize
 }
